@@ -1,11 +1,17 @@
 package autocomplete.textfield;
 
 import javafx.application.Platform;
+import javafx.collections.ListChangeListener;
+import javafx.event.ActionEvent;
+import javafx.geometry.Side;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
+import javafx.scene.input.KeyEvent;
 
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -21,10 +27,11 @@ public class AutocompleteTextField<T> extends TextField {
     private HashMap<T, String> reps;
     private HashMap<T, Integer> points;
     private WeakHashMap<MenuItem, T> menuItems;
+    private ExecutorService executorService;
 
     private int nbMaxProp, maxDistCompare;
     private boolean remRep, isMultithreading;
-    private AtomicBoolean isNotEmpty;
+    private AtomicBoolean isEmpty;
 
     public AutocompleteTextField(List<T> items, int nbMaxProp, int maxDistCompare, boolean remRep, boolean isMultithreading) {
         this.items = new ArrayList<>(items);
@@ -35,14 +42,60 @@ public class AutocompleteTextField<T> extends TextField {
         this.contextMenu = new ContextMenu();
         this.points = new HashMap<>();
         this.menuItems = new WeakHashMap<>();
-        this.isNotEmpty = new AtomicBoolean();
+        this.isEmpty = new AtomicBoolean(true);
+
+        if(isMultithreading)
+            executorService = Executors.newSingleThreadExecutor();
 
         if(remRep)
             this.reps = new HashMap<>();
+
+        //The context menu shows itself when it contains at least one element.
+        contextMenu.getItems().addListener((ListChangeListener<MenuItem>) c -> {
+            if(contextMenu.getItems().size() == 0)
+                Platform.runLater(() -> contextMenu.hide());
+            else
+                Platform.runLater(() -> contextMenu.show(AutocompleteTextField.this, Side.BOTTOM, 0, 0));
+        });
+
+        /*The user can uses the arrow buttons to navigate in the context menu, type what he is looking for but when he
+        types the enter button AutocompleteTextField throw a ActionEvent.*/
+        addEventHandler(KeyEvent.KEY_RELEASED, event -> {
+            switch(event.getCode()) {
+                case LEFT:
+                case RIGHT:
+                case UP:
+                case DOWN:
+                    return;
+
+                case ENTER:
+                    setText("");
+                    AutocompleteTextField.this.fireEvent(new ActionEvent());
+                    break;
+
+                default:
+                    if(getText().length() == 0) {
+                        isEmpty.set(true);
+                        if(isMultithreading) {
+                            while(!executorService.isShutdown())
+                                executorService.shutdown();
+                        }
+                    } else {
+                        isEmpty.set(false);
+                        if(isMultithreading) {
+                            if (executorService.isShutdown())
+                                executorService = Executors.newSingleThreadExecutor();
+                            executorService.submit(() -> analyze(getText()));
+                        } else
+                            analyze(getText());
+                    }
+            }
+        });
     }
 
     /**
      * Analyzes the input passed by argument and add propositions to the context menu.
+     *
      * @param input The input from the widget user.
      */
     private void analyze(String input) {
@@ -135,13 +188,5 @@ public class AutocompleteTextField<T> extends TextField {
         }
 
         return line[str1.length()];
-    }
-
-    private class Analyser extends Thread {
-
-        @Override
-        public void run() {
-            //TODO: Implementation of Analyser.run().
-        }
     }
 }
