@@ -34,7 +34,10 @@ public class AutocompleteTextField<T> extends TextField {
     private final AtomicBoolean isEmpty;
 
     /**
-     * Constructs an instance of AutocompleteTextField with all necessary argument.
+     * Constructs an instance of AutocompleteTextField. The analyzing task will be made in the JavaFX Application
+     * Thread. The maximum of propositions the context menu can show is 5, or less if the list of items passed by
+     * argument is smaller than 5. Any representation of items is not saved in memory.
+     *
      * @param items             The list of items.
      */
     public AutocompleteTextField(List<T> items) {
@@ -42,7 +45,9 @@ public class AutocompleteTextField<T> extends TextField {
     }
 
     /**
-     * Constructs an instance of AutocompleteTextField with all necessary argument.
+     * Constructs an instance of AutocompleteTextField. The analyzing task will be made in the JavaFX Application
+     * Thread.
+     *
      * @param items             The list of items.
      * @param nbMaxProp         The maximum of propositions the context menu can show.
      * @param maxDistCompare    The maximum distance to keep an item for suggesting it to the user.
@@ -54,7 +59,8 @@ public class AutocompleteTextField<T> extends TextField {
     }
 
     /**
-     * Constructs an instance of AutocompleteTextField with all necessary argument.
+     * Constructs an instance of AutocompleteTextField with all necessary arguments.
+     *
      * @param items             The list of items.
      * @param nbMaxProp         The maximum of propositions the context menu can show.
      * @param maxDistCompare    The maximum distance to keep an item for suggesting it to the user.
@@ -62,7 +68,7 @@ public class AutocompleteTextField<T> extends TextField {
      *                          will be called only once by item. False, otherwise.
      * @param isMultithreading  True if analyzing of user input is done on a different thread than the JavaFX
      *                          Application Thread. False, otherwise. The analyzing thread shutdown when nothing is
-     *                          writen it the autocompletion textfield or when the user pressed enter (an ActionEvent is
+     *                          writen in the autocompletion textfield or when the user pressed enter (an ActionEvent is
      *                          thown).
      */
     public AutocompleteTextField(List<T> items, int nbMaxProp, int maxDistCompare,
@@ -180,7 +186,7 @@ public class AutocompleteTextField<T> extends TextField {
      * By default, the toString() method is used to represents the object. You can change that behavior by extending the
      * actuel class and and overriding this method, or override the toString() method of the item class.
      * This method can be called several times in a time unit. You should keep this in mind when you may implement
-     * method. You could also set to true the remRep (remember representation) flag to keep in mind the representation
+     * method. You could also set to true the remRep (REMember REPresentation) flag to keep in mind the representation
      * of each item. The representation method will be called when the instance is building.
      *
      * @param item  The item to represent.
@@ -191,13 +197,13 @@ public class AutocompleteTextField<T> extends TextField {
     }
 
     /**
-     * Returns the diffrence between two strings. This method is used to sort and identify good suggestions for the
+     * Returns the diffrence between two strings. This method is used to sort and to identify good suggestions for the
      * widget user.
      * By default, the Damerau-Levenshtein distance is used.
      * You can change that behavior by extending the actual class and overriding this method.
      *
-     * @param str1  The first item to compare.
-     * @param str2  The second item to compare.
+     * @param str1  The first string to compare.
+     * @param str2  The second string to compare.
      * @return      The difference between two items passed by argument.
      */
     private int compareBetween(String str1, String str2) {
