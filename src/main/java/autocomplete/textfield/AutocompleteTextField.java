@@ -2,6 +2,7 @@ package autocomplete.textfield;
 
 import javafx.application.Platform;
 import javafx.collections.ListChangeListener;
+import javafx.event.ActionEvent;
 import javafx.geometry.Side;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
@@ -60,7 +61,7 @@ public class AutocompleteTextField<T> extends TextField {
      * @param remRep            True if the representation of every item is keep in memory. The representation(T) method
      *                          will be called only once by item. False, otherwise.
      * @param isMultithreading  True if analyzing of user input is done on a different thread than the JavaFX
-     *                          Application Thread. False, otherwise.
+     *                          Application Thread. False, otherwise. The
      */
     public AutocompleteTextField(List<T> items, int nbMaxProp, int maxDistCompare,
                                  boolean remRep, boolean isMultithreading) {
@@ -77,8 +78,10 @@ public class AutocompleteTextField<T> extends TextField {
         if(isMultithreading)
             executorService = Executors.newSingleThreadExecutor();
 
-        if(remRep)
+        if(remRep) {
             this.reps = new HashMap<>();
+            this.items.forEach(item -> reps.put(item, reprentation(item)));
+        }
 
         //The context menu shows itself when it contains at least one element.
         contextMenu.getItems().addListener((ListChangeListener<MenuItem>) c -> {
@@ -91,6 +94,11 @@ public class AutocompleteTextField<T> extends TextField {
         contextMenu.setOnAction((event -> {
             Platform.runLater(() -> setText(((MenuItem)event.getTarget()).getText()));
         }));
+
+        addEventFilter(ActionEvent.ACTION, event -> {
+            while(isMultithreading && !executorService.isShutdown())
+                executorService.shutdown();
+        });
 
         /*The user can uses the arrow buttons to navigate in the context menu, type what he is looking for but when he
         types the enter button AutocompleteTextField throw a ActionEvent.*/
@@ -106,10 +114,8 @@ public class AutocompleteTextField<T> extends TextField {
                 default:
                     if(getText().length() == 0) {
                         isEmpty.set(true);
-                        if(isMultithreading) {
-                            while(!executorService.isShutdown())
-                                executorService.shutdown();
-                        }
+                        while(isMultithreading && !executorService.isShutdown())
+                            executorService.shutdown();
                         Platform.runLater(() -> contextMenu.getItems().clear());
                     } else {
                         isEmpty.set(false);
