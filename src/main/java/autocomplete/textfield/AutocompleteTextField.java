@@ -89,6 +89,10 @@ public class AutocompleteTextField<T> extends TextField {
                 Platform.runLater(() -> contextMenu.show(AutocompleteTextField.this, Side.BOTTOM, 0, 0));
         });
 
+        contextMenu.setOnAction((event -> {
+            Platform.runLater(() -> setText(((MenuItem)event.getTarget()).getText()));
+        }));
+
         /*The user can uses the arrow buttons to navigate in the context menu, type what he is looking for but when he
         types the enter button AutocompleteTextField throw a ActionEvent.*/
         addEventHandler(KeyEvent.KEY_RELEASED, event -> {
@@ -97,11 +101,8 @@ public class AutocompleteTextField<T> extends TextField {
                 case RIGHT:
                 case UP:
                 case DOWN:
-                    return;
-
                 case ENTER:
-                    AutocompleteTextField.this.fireEvent(new ActionEvent());
-                    break;
+                    return;
 
                 default:
                     if(getText().length() == 0) {
@@ -154,7 +155,7 @@ public class AutocompleteTextField<T> extends TextField {
         menu.*/
         Collection<MenuItem> props = points.entrySet().stream().
                 filter(entry -> entry.getValue() <= maxDistCompare).
-                sorted((entry1, entry2) -> entry2.getValue().compareTo(entry1.getValue())).
+                sorted(Map.Entry.comparingByValue()).
                 limit(nbMaxProp).
                 map(entry -> {
                     T item = entry.getKey();
