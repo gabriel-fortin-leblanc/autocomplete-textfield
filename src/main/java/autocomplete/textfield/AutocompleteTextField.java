@@ -22,23 +22,54 @@ import java.util.stream.Collectors;
  */
 public class AutocompleteTextField<T> extends TextField {
 
-    private List<T> items;
-    private ContextMenu contextMenu;
+    private final List<T> items;
+    private final ContextMenu contextMenu;
     private HashMap<T, String> reps;
     private HashMap<T, Integer> points;
     private WeakHashMap<MenuItem, T> menuItems;
     private ExecutorService executorService;
 
-    private int nbMaxProp, maxDistCompare;
-    private boolean remRep, isMultithreading;
-    private AtomicBoolean isEmpty;
+    private final int nbMaxProp, maxDistCompare;
+    private final boolean remRep;
+    private final AtomicBoolean isEmpty;
 
-    public AutocompleteTextField(List<T> items, int nbMaxProp, int maxDistCompare, boolean remRep, boolean isMultithreading) {
+    /**
+     * Constructs an instance of AutocompleteTextField with all necessary argument.
+     * @param items             The list of items.
+     */
+    public AutocompleteTextField(List<T> items) {
+        this(items, 5, Integer.MAX_VALUE, false);
+    }
+
+    /**
+     * Constructs an instance of AutocompleteTextField with all necessary argument.
+     * @param items             The list of items.
+     * @param nbMaxProp         The maximum of propositions the context menu can show.
+     * @param maxDistCompare    The maximum distance to keep an item for suggesting it to the user.
+     * @param remRep            True if the representation of every item is keep in memory. The representation(T) method
+     *                          will be called only once by item. False, otherwise.
+     */
+    public AutocompleteTextField(List<T> items, int nbMaxProp, int maxDistCompare, boolean remRep) {
+        this(items, nbMaxProp, maxDistCompare, remRep, false);
+    }
+
+    /**
+     * Constructs an instance of AutocompleteTextField with all necessary argument.
+     * @param items             The list of items.
+     * @param nbMaxProp         The maximum of propositions the context menu can show.
+     * @param maxDistCompare    The maximum distance to keep an item for suggesting it to the user.
+     * @param remRep            True if the representation of every item is keep in memory. The representation(T) method
+     *                          will be called only once by item. False, otherwise.
+     * @param isMultithreading  True if analyzing of user input is done on a different thread than the JavaFX
+     *                          Application Thread. False, otherwise.
+     */
+    public AutocompleteTextField(List<T> items, int nbMaxProp, int maxDistCompare,
+                                 boolean remRep, boolean isMultithreading) {
+        super();
         this.items = new ArrayList<>(items);
         this.nbMaxProp = nbMaxProp;
         this.maxDistCompare = maxDistCompare;
         this.remRep = remRep;
-        this.isMultithreading = isMultithreading;
         this.contextMenu = new ContextMenu();
         this.points = new HashMap<>();
         this.menuItems = new WeakHashMap<>();
@@ -69,7 +100,6 @@ public class AutocompleteTextField<T> extends TextField {
                     return;
 
                 case ENTER:
-                    setText("");
                     AutocompleteTextField.this.fireEvent(new ActionEvent());
                     break;
 
@@ -80,6 +110,7 @@ public class AutocompleteTextField<T> extends TextField {
                             while(!executorService.isShutdown())
                                 executorService.shutdown();
                         }
+                        Platform.runLater(() -> contextMenu.getItems().clear());
                     } else {
                         isEmpty.set(false);
                         if(isMultithreading) {
@@ -91,6 +122,19 @@ public class AutocompleteTextField<T> extends TextField {
                     }
             }
         });
+    }
+
+    /**
+     * Return the item that his representation is the same then the text in the textfield. If any item is found, null is
+     * returned.
+     *
+     * @return  The item writen in the textfield, null if there is no match with any item representation.
+     */
+    public T getSelectedItems() {
+        return items.stream().filter(item -> {
+            String rep = remRep ? reps.get(item) : reprentation(item);
+            return getText().equalsIgnoreCase(rep);
+        }).findAny().orElse(null);
     }
 
     /**
@@ -181,10 +225,10 @@ public class AutocompleteTextField<T> extends TextField {
                     line[i] = Math.min(line[i], prevLine2[i - 2] + cost);
                 }
 
-                prevLine2 = prevLine;
-                prevLine = line;
-
             }
+
+            prevLine2 = prevLine;
+            prevLine = line;
         }
 
         return line[str1.length()];
