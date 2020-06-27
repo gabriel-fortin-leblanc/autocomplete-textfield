@@ -61,7 +61,9 @@ public class AutocompleteTextField<T> extends TextField {
      * @param remRep            True if the representation of every item is keep in memory. The representation(T) method
      *                          will be called only once by item. False, otherwise.
      * @param isMultithreading  True if analyzing of user input is done on a different thread than the JavaFX
-     *                          Application Thread. False, otherwise. The
+     *                          Application Thread. False, otherwise. The analyzing thread shutdown when nothing is
+     *                          writen it the autocompletion textfield or when the user pressed enter (an ActionEvent is
+     *                          thown).
      */
     public AutocompleteTextField(List<T> items, int nbMaxProp, int maxDistCompare,
                                  boolean remRep, boolean isMultithreading) {
