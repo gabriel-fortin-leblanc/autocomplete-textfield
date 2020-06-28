@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 /**
- * This class reprensents an autocomplete textfield.
+ * This class represents an autocomplete text field.
  *
  * @author Gabriel Fortin
  */
@@ -25,8 +25,7 @@ public class AutocompleteTextField<T> extends TextField {
     private final List<T> items;
     private final ContextMenu contextMenu;
     private HashMap<T, String> reps;
-    private HashMap<T, Integer> points;
-    private WeakHashMap<MenuItem, T> menuItems;
+    private final HashMap<T, Integer> points;
     private ExecutorService executorService;
 
     private final int nbMaxProp, maxDistCompare;
@@ -35,8 +34,8 @@ public class AutocompleteTextField<T> extends TextField {
 
     /**
      * Constructs an instance of AutocompleteTextField. The analyzing task will be made in the JavaFX Application
-     * Thread. The maximum of propositions the context menu can show is 5, or less if the list of items passed by
-     * argument is smaller than 5. Any representation of items is not saved in memory.
+     * Thread. The maximum of suggestions the context menu can show is five, or less if the list of items passed by
+     * argument is smaller than five. Any representation of items is not saved in memory.
      *
      * @param items             The list of items.
      */
@@ -49,7 +48,7 @@ public class AutocompleteTextField<T> extends TextField {
      * Thread.
      *
      * @param items             The list of items.
-     * @param nbMaxProp         The maximum of propositions the context menu can show.
+     * @param nbMaxProp         The maximum of suggestions the context menu can show.
      * @param maxDistCompare    The maximum distance to keep an item for suggesting it to the user.
      * @param remRep            True if the representation of every item is keep in memory. The representation(T) method
      *                          will be called only once by item. False, otherwise.
@@ -62,7 +61,7 @@ public class AutocompleteTextField<T> extends TextField {
      * Constructs an instance of AutocompleteTextField with all necessary arguments.
      *
      * @param items             The list of items.
-     * @param nbMaxProp         The maximum of propositions the context menu can show.
+     * @param nbMaxProp         The maximum of suggestions the context menu can show.
      * @param maxDistCompare    The maximum distance to keep an item for suggesting it to the user.
      * @param remRep            True if the representation of every item is keep in memory. The representation(T) method
      *                          will be called only once by item. False, otherwise.
@@ -80,7 +79,6 @@ public class AutocompleteTextField<T> extends TextField {
         this.remRep = remRep;
         this.contextMenu = new ContextMenu();
         this.points = new HashMap<>();
-        this.menuItems = new WeakHashMap<>();
         this.isEmpty = new AtomicBoolean(true);
 
         if(isMultithreading)
@@ -139,10 +137,10 @@ public class AutocompleteTextField<T> extends TextField {
     }
 
     /**
-     * Return the item that his representation is the same then the text in the textfield. If any item is found, null is
-     * returned.
+     * Returns the item that his representation is the same then the text in the text field. If any item is found, null
+     * is returned.
      *
-     * @return  The item writen in the textfield, null if there is no match with any item representation.
+     * @return  The item writen in the text field, null if there is no match with any item representation.
      */
     public T getSelectedItems() {
         return items.stream().filter(item -> {
@@ -152,7 +150,7 @@ public class AutocompleteTextField<T> extends TextField {
     }
 
     /**
-     * Analyzes the input passed by argument and add propositions to the context menu.
+     * Analyzes the input passed by argument and add suggestions to the context menu.
      *
      * @param input The input from the widget user.
      */
@@ -173,9 +171,7 @@ public class AutocompleteTextField<T> extends TextField {
                 map(entry -> {
                     T item = entry.getKey();
                     String rep = remRep ? reps.get(item) : reprentation(item);
-                    MenuItem menuItem = new MenuItem(rep);
-                    menuItems.put(menuItem, item);
-                    return menuItem;
+                    return new MenuItem(rep);
                 }).
                 collect(Collectors.toCollection(ArrayList::new));
         Platform.runLater(() -> contextMenu.getItems().setAll(props));
@@ -183,24 +179,24 @@ public class AutocompleteTextField<T> extends TextField {
 
     /**
      * Returns the representation of the item in a string that will be used for the context menu.
-     * By default, the toString() method is used to represents the object. You can change that behavior by extending the
-     * actuel class and and overriding this method, or override the toString() method of the item class.
+     * By default, the toString() method is used to represent the object. You can change that behavior by extending the
+     * current class and overriding this method, or override the toString() method of the item class.
      * This method can be called several times in a time unit. You should keep this in mind when you may implement
      * method. You could also set to true the remRep (REMember REPresentation) flag to keep in mind the representation
      * of each item. The representation method will be called when the instance is building.
      *
      * @param item  The item to represent.
-     * @return      A string that represent the item.
+     * @return      A string that represents the item.
      */
     private String reprentation(T item) {
         return item.toString();
     }
 
     /**
-     * Returns the diffrence between two strings. This method is used to sort and to identify good suggestions for the
+     * Returns the difference between two strings. This method is used to sort and to identify good suggestions for the
      * widget user.
      * By default, the Damerau-Levenshtein distance is used.
-     * You can change that behavior by extending the actual class and overriding this method.
+     * You can change that behavior by extending the current class and overriding this method.
      *
      * @param str1  The first string to compare.
      * @param str2  The second string to compare.
